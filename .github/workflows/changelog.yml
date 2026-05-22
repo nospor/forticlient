@@ -20,9 +20,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate Changelog
+      - name: Generate Changelog (Tag)
+        if: github.ref_type == 'tag'
         uses: orhun/git-cliff-action@v4
-        id: git-cliff
+        id: git-cliff-tag
+        with:
+          config: cliff.toml
+          args: --verbose --tag ${{ github.ref_name }}
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Generate Changelog (Branch)
+        if: github.ref_type != 'tag'
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff-branch
         with:
           config: cliff.toml
           args: --verbose
@@ -42,6 +54,6 @@ jobs:
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.git-cliff.outputs.content }}
+          body: ${{ steps.git-cliff-tag.outputs.content }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
