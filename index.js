@@ -4,12 +4,21 @@ import fs from 'fs';
 import path from 'path';
 import tls from 'tls';
 import crypto from 'crypto';
+import os from 'os';
 import { spawn, execSync } from 'child_process';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import ora from 'ora';
 
-const CONFIG_PATH = path.resolve('./config.json');
+// Default config path: ~/.config/forticlient/config.json
+let CONFIG_PATH = path.resolve(os.homedir(), '.config/forticlient/config.json');
+
+// Parse --config or -c override
+const configIndex = process.argv.findIndex(arg => arg === '--config' || arg === '-c');
+if (configIndex !== -1 && process.argv[configIndex + 1]) {
+  CONFIG_PATH = path.resolve(process.argv[configIndex + 1]);
+  process.argv.splice(configIndex, 2);
+}
 
 // Check if openfortivpn is installed
 function isBinaryInstalled(binary) {
@@ -64,6 +73,11 @@ function fetchCertFingerprint(host, port) {
 
 // Load configurations
 function loadConfig() {
+  const configDir = path.dirname(CONFIG_PATH);
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
+  }
+
   if (!fs.existsSync(CONFIG_PATH)) {
     const defaultConfig = { connections: [] };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(defaultConfig, null, 2), 'utf-8');
@@ -73,7 +87,7 @@ function loadConfig() {
     const data = fs.readFileSync(CONFIG_PATH, 'utf-8');
     return JSON.parse(data);
   } catch (e) {
-    console.error(chalk.red(`\n❌ Error reading config.json: ${e.message}`));
+    console.error(chalk.red(`\n❌ Error reading configuration file (${CONFIG_PATH}): ${e.message}`));
     console.log(chalk.yellow('Using empty configuration.'));
     return { connections: [] };
   }
@@ -82,10 +96,14 @@ function loadConfig() {
 // Save configurations
 function saveConfig(config) {
   try {
+    const configDir = path.dirname(CONFIG_PATH);
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir, { recursive: true });
+    }
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
     return true;
   } catch (e) {
-    console.error(chalk.red(`\n❌ Failed to save config.json: ${e.message}`));
+    console.error(chalk.red(`\n❌ Failed to save configuration file (${CONFIG_PATH}): ${e.message}`));
     return false;
   }
 }
@@ -106,7 +124,7 @@ async function mainMenu() {
     printBanner();
     const config = loadConfig();
     const count = config.connections ? config.connections.length : 0;
-    console.log(chalk.gray(` Loaded ${count} connection profile(s) from config.json\n`));
+    console.log(chalk.gray(` Loaded ${count} profile(s) from: ${CONFIG_PATH}\n`));
 
     const { action } = await inquirer.prompt([
       {
