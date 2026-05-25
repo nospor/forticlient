@@ -37,7 +37,7 @@ By default, your connection profiles are stored globally at:
 You can override the default configuration path by passing the `--config` (or `-c`) flag anywhere in your command arguments:
 ```bash
 # Connect using a custom config file
-./index.js --config /path/to/my-config.json connect profile-VPN
+./index.js --config /path/to/my-config.json connect yourvpn
 
 # Or load the interactive menu with a custom config file
 ./index.js -c /path/to/my-config.json
