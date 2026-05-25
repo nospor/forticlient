@@ -4,6 +4,7 @@
 ### 📝 Documentation
 
 - Update CHANGELOG.md [skip ci]
+- Update CHANGELOG.md [skip ci]
 
 ## [0.1.1] - 2026-05-22
 
